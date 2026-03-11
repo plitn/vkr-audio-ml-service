@@ -49,11 +49,12 @@ To develop a web service that applies machine learning methods for automatic aud
 - define the problem statement and project scope.
 
 ### Checkpoint 2. Literature Review and Research Foundation -- 12 march 2026
-- review research papers, open-source solutions, and existing services;
+- review open-source solutions, and existing services;
 - analyze modern approaches to transcription, diarization, and noise reduction;
 - make a preliminary selection of models, libraries, and tools;
-- identify metrics and comparison criteria.
+- identify base metrics and comparison criteria;
 - select open datasets and test audio recordings;
+- determine language in datasets (Russian or English?)
 
 ### Checkpoint 3. Data Preparation and Analysis -- 13 march 2026
 - analyze formats and characteristics of audio data;
@@ -67,7 +68,7 @@ To develop a web service that applies machine learning methods for automatic aud
 - obtain initial results on test data;
 - analyze the limitations of the baseline approach.
 
-### Checkpoint 5. Improved Solution Development -- 15 march
+### Checkpoint 5. Improved Solution Development -- 15 march 2026
 - select and integrate more advanced models or configurations;
 - compare them with the baseline;
 - optimize system quality and/or processing speed.
