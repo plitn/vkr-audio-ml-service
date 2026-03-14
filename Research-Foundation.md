@@ -27,7 +27,7 @@ $T_{conf}$ reflects embedding quality;
 | Metric | Definition | Direction |
 |---|---|---|
 | **DER** | $$\frac{T_{miss} + T_{fa} + T_{conf}}{T_{total}}$$ | Lower is better |
-| **JER** | 1- $$\frac{1}{N}\sumJaccard(ref,mapped_sys)$$| Lower is better |
+| **JER** | 1- $$\frac{1}{N}\sum Jaccard(ref,mapped_sys)$$| Lower is better |
 
 For speaker diarization we should look at both of these metrics, because DER can be dominated by long speakers and obscure errors on small speakers and JER can over-penalize false short detections[https://www.pyannote.ai/blog/how-to-evaluate-speaker-diarization-performance]
 
