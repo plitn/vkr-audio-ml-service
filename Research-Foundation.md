@@ -5,7 +5,7 @@
 
 **WER** - Word Error Rate; <br>
 **CER** - Character Error Rate; <br>
-**RTFx** - Inverse real-time factor.[1]
+**RTFx** - Inverse real-time factor. [1]
 
 | Metric | Definition | Direction |
 |---|---|---|
@@ -41,7 +41,7 @@ For speaker diarization we should look at both of these metrics, because DER can
 | **STOI** | Short-Time Objective Intelligibility, shows how easy it is to understand speech | 0 to 1 | Higher is better |
 | **RTF** | $$\frac{PT}{AD}$$; AD = audio duration, PT = processing time | > 0 | Lower is better |
 
-PESQ and STOI are signal-level metrics that operate independently of language content, making them directly applicable to multilingual audio without modification.[4]
+PESQ and STOI are signal-level metrics that operate independently of language content, making them directly applicable to multilingual audio without modification. [4]
 RTF is included as a deployment-relevant metric: a model with slightly lower PESQ but RTF < 1.0 may be preferable for the real-time path.
 
 ---
@@ -50,7 +50,7 @@ RTF is included as a deployment-relevant metric: a model with slightly lower PES
 
 ### 2.1 Background
 
-Right now Open ASR Leaderboard[1] tracks over 150 models and identifies three dominant architectural families:
+Right now Open ASR Leaderboard [1] tracks over 150 models and identifies three dominant architectural families:
 
 1. **CTC / TDT decoders with Conformer encoders** — highest throughput, competitive WER.
 2. **Encoder-decoder Transformers**  —  multilingual coverage, moderate throughput.
@@ -67,31 +67,31 @@ Below there are three candidates with different values in accuracy, throughput a
 
 ### 2.2 Candidate 1: Whisper Large-v3 (OpenAI)
 
-- **Architecture:** Encoder-decoder Transformer; 1.55B parameters.[5]
-- **Training data:** 680_000 hours of multilingual weakly supervised data from the web.[5]
+- **Architecture:** Encoder-decoder Transformer; 1.55B parameters. [5]
+- **Training data:** 680_000 hours of multilingual weakly supervised data from the web. [5]
 - **Language support:** 99 languages.
-- **WER (English):** 6,43%.[1]
-- **WER (multilingual):** 9,9%.[6]
-- **RTFx (GPU, A100):** 68,56.[1]
+- **WER (English):** 6,43%. [1]
+- **WER (multilingual):** 9,9%. [6]
+- **RTFx (GPU, A100):** 68,56. [1]
 
-**Why is used in comparison?** Whisper Large-v3 is the broadest multilingual baseline available (99 languages) and the most commonly used ASR.[7] It represents the upper bound of language coverage in this comparison. Its RTFx of 68,56 will serve as the throughput lower bound against which higher-throughput candidates are compared.
+**Why is used in comparison?** Whisper Large-v3 is the broadest multilingual baseline available (99 languages) and the most commonly used ASR. [7] It represents the upper bound of language coverage in this comparison. Its RTFx of 68,56 will serve as the throughput lower bound against which higher-throughput candidates are compared.
 
 **Known limitations relevant to evaluation:**
-- RTFx approximately 49 lower than Parakeet-TDT-0.6B-v3 on identical hardware.[6]
+- RTFx approximately 49 lower than Parakeet-TDT-0.6B-v3 on identical hardware. [6]
 
 ---
 
 ### 2.3 Candidate 2: Parakeet-TDT-0.6B-v3 (NVIDIA)
 
-- **Architecture:** FastConformer encoder + TDT decoder; 600M parameters.[8]
-- **Training data:** 660,000 hours from the Granary multilingual corpus[9] + 10,000 hours of human-transcribed NeMo ASR Set 3.0; trained for 150_000 steps on 128 A100 GPUs.[8]
-- **Language support:** 25 European languages including English and Russian; Automatic language identification.[8]
-- **WER (English):** 6,34%.[8]
-- **WER (Russian):** 5,51% on FLEURS; 3% on CoVoST.[8]
-- **WER (multilingual):** 8,1%.[6]
-- **RTFx (A100):** 3332,74.[6]
+- **Architecture:** FastConformer encoder + TDT decoder; 600M parameters. [8]
+- **Training data:** 660,000 hours from the Granary multilingual corpus [9] + 10,000 hours of human-transcribed NeMo ASR Set 3.0; trained for 150_000 steps on 128 A100 GPUs. [8]
+- **Language support:** 25 European languages including English and Russian; Automatic language identification. [8]
+- **WER (English):** 6,34%. [8]
+- **WER (Russian):** 5,51% on FLEURS; 3% on CoVoST. [8]
+- **WER (multilingual):** 8,1%. [6]
+- **RTFx (A100):** 3332,74. [6]
 
-**Noise robustness:[8]**
+**Noise robustness: [8]**
 
 | SNR Level | Avg WER | Relative degradation |
 |---|---|---|
@@ -111,10 +111,10 @@ Below there are three candidates with different values in accuracy, throughput a
 
 ### 2.4 Candidate 3: Whisper Large-v3 Turbo (OpenAI)
 
-- **Architecture:** Simplier variant of Large-v3; decoder reduced from 32 to 4 layers; 809M parameters.[11]
+- **Architecture:** Simplier variant of Large-v3; decoder reduced from 32 to 4 layers; 809M parameters. [11]
 - **Language support:** 99 languages.
 - **WER (multilingual):** 5,87%
-- **RTFx:** 121,11.[11]
+- **RTFx:** 121,11. [11]
 
 **Why is used in comparison?** Whisper Turbo stays somewhere between Whisper Large-v3 (maximum coverage, lowest throughput) and Parakeet-TDT-0.6B-v3 (maximum throughput, limited coverage). It is the candidate for lighter hardware deployment.
 
@@ -141,7 +141,7 @@ Below there are three candidates with different values in accuracy, throughput a
 Speaker diarization task decomposes into voice activity detection, speaker segmentation, speaker embedding extraction, and clustering. <br>
 There are two main architectural paradigms:
 
-**Cascaded pipelines.** Each component is trained independently and can be replaced. The primary representative is pyannote.audio.[2]
+**Cascaded pipelines.** Each component is trained independently and can be replaced. The primary representative is pyannote.audio. [2]
 
 **End-to-end neural diarization (EEND).** A single model jointly predicts speaker activity, which allows native handling of overlapping speech.
 
@@ -150,9 +150,9 @@ There are two main architectural paradigms:
 
 ### 3.2 Candidate 1: pyannote.audio 3.1 (CNRS)
 
-- **Architecture:** Cascaded pipeline.[2]
+- **Architecture:** Cascaded pipeline. [2]
 - **Overlap:** Up to 3 overlapping speakers.
-- **DER benchmarks:[2]**
+- **DER benchmarks: [2]**
   - VoxConverse test: 11%
   - AMI test: 19%
   - DIHARD III: 27%
@@ -168,7 +168,7 @@ There are two main architectural paradigms:
 
 ### 3.3 Candidate 2: NVIDIA NeMo MSDD (Multi-Scale Diarization Decoder)
 
-- **Architecture:** Multi-Scale Diarization Decoder (MSDD).[12]
+- **Architecture:** Multi-Scale Diarization Decoder (MSDD). [12]
 - **DER:** Specific value was not found without running model on datasets.
 - **Setup:** Requires NVIDIA GPU + CUDA + NeMo.
 
@@ -223,7 +223,7 @@ Three candidates are included: one traditional signal-processing baseline, and t
 
 ### 4.3 Candidate 1: RNNoise
 
-- **Architecture:** Hybrid DSP + neural.[14]
+- **Architecture:** Hybrid DSP + neural. [14]
 - **Latency:** 10 ms.
 - **PESQ:** 3,88.
 - **STOI:** 0,92.
@@ -263,11 +263,11 @@ Three candidates are included: one traditional signal-processing baseline, and t
 
 | Dataset | Language(s) | Size | Type | Notes |
 |---|---|---|---|---|
-| **LibriSpeech** | English | ~960h train / 10.7h test-clean | Read speech | Standard ASR benchmark.[15] |
+| **LibriSpeech** | English | ~960h train / 10.7h test-clean | Read speech | Standard ASR benchmark. [15] |
 | **Common Voice** | 100+ | Varies per language | Crowd-sourced | Primary multilingual dataset. |
-| **FLEURS** | 102 | 12h per language | Read speech | Used in Open ASR Leaderboard + Parakeet-TDT-0.6B-v3 evaluation.[8][16] |
-| **Multilingual LibriSpeech** | 8 | Varies | Read speech | Higher quality than Common Voice.[17] |
-| **CoVoST 2** | 21 source languages | Varies | Read speech | Used in Parakeet-TDT-0.6B-v3 evaluation; direct WER comparison.[8] |
+| **FLEURS** | 102 | 12h per language | Read speech | Used in Open ASR Leaderboard + Parakeet-TDT-0.6B-v3 evaluation. [8][16] |
+| **Multilingual LibriSpeech** | 8 | Varies | Read speech | Higher quality than Common Voice. [17] |
+| **CoVoST 2** | 21 source languages | Varies | Read speech | Used in Parakeet-TDT-0.6B-v3 evaluation; direct WER comparison. [8] |
 
 ---
 
@@ -275,10 +275,10 @@ Three candidates are included: one traditional signal-processing baseline, and t
 
 | Dataset | Language(s) | Hours | Notes |
 |---|---|---|---|
-| **AMI Meeting Corpus** | English | 100 | Standard benchmark.[18] |
-| **VoxConverse** | English | 64 | YouTube audio.[2] |
+| **AMI Meeting Corpus** | English | 100 | Standard benchmark. [18] |
+| **VoxConverse** | English | 64 | YouTube audio. [2] |
 | **CALLHOME** | Multilingual | 18 | Telephone; multiple languages; 2–6 speakers. |
-| **DIHARD III** | Diverse | 33 | Hardest benchmark; final evaluation.[3] |
+| **DIHARD III** | Diverse | 33 | Hardest benchmark; final evaluation. [3] |
 
 ---
 
@@ -286,9 +286,9 @@ Three candidates are included: one traditional signal-processing baseline, and t
 
 | Dataset | Language(s) | Notes |
 |---|---|---|
-| **DNS Challenge** | English + multilingual | Primary benchmark; clean/noisy paired recordings.[19] |
+| **DNS Challenge** | English + multilingual | Primary benchmark; clean/noisy paired recordings. [19] |
 | **VCTK + DEMAND** | English | Widely used for PESQ/STOI comparison. |
-| **URGENT Challenge 2025** | Multilingual | Multiple distortion types (noise, reverberation, clipping).[20] |
+| **URGENT Challenge 2025** | Multilingual | Multiple distortion types (noise, reverberation, clipping). [20] |
 
 ---
 
