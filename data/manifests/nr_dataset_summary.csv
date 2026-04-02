@@ -1,0 +1,2 @@
+Dataset,# Pairs,Total hours,Duration mean (s),Duration min (s),Duration max (s),SNR mean (dB),SNR range (dB),SR values (orig),Sample rate,Normalized,Format
+URGENT 2024 non-blind test,1000,1.92,6.93,2.51,14.73,7.4,-5.0 – 20.0,"[16000, 22050, 24000, 32000, 44100, 48000]",16000,False,mono WAV PCM_16
