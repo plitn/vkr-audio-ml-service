@@ -1,0 +1,3 @@
+Dataset,# Recordings,Total hours,Duration mean (min),Duration min (min),Duration max (min),Speakers mean,Speakers range,Overlap mean
+VoxConverse test,232,43.54,11.3,0.4,20.0,6.5,1–21,3.2696120689655177%
+AMI IHM test,16,8.89,33.4,13.4,48.2,3.9,3–4,11.58%

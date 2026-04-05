@@ -1,0 +1,17 @@
+id,audio_path,rttm_path,duration_sec,n_speakers,n_segments,overlap_ratio,silence_ratio,mean_segment_sec
+EN2002a,data/processed/ami_test/EN2002a.wav,data/rttm/ami_butspeechfit/ami_test/EN2002a.rttm,2142.37,4,746,0.2425,0.0,3.392
+EN2002b,data/processed/ami_test/EN2002b.wav,data/rttm/ami_butspeechfit/ami_test/EN2002b.rttm,1786.59,4,490,0.2182,0.0,3.966
+EN2002c,data/processed/ami_test/EN2002c.wav,data/rttm/ami_butspeechfit/ami_test/EN2002c.rttm,2889.64,3,635,0.2182,0.0,5.266
+EN2002d,data/processed/ami_test/EN2002d.wav,data/rttm/ami_butspeechfit/ami_test/EN2002d.rttm,2207.85,4,685,0.2623,0.0,3.906
+ES2004a,data/processed/ami_test/ES2004a.wav,data/rttm/ami_butspeechfit/ami_test/ES2004a.rttm,1049.04,4,260,0.1185,0.1197,3.552
+ES2004b,data/processed/ami_test/ES2004b.wav,data/rttm/ami_butspeechfit/ami_test/ES2004b.rttm,2341.96,4,467,0.0867,0.0465,4.782
+ES2004c,data/processed/ami_test/ES2004c.wav,data/rttm/ami_butspeechfit/ami_test/ES2004c.rttm,2331.79,4,497,0.0922,0.0374,4.516
+ES2004d,data/processed/ami_test/ES2004d.wav,data/rttm/ami_butspeechfit/ami_test/ES2004d.rttm,2222.25,4,602,0.1167,0.097,3.334
+IS1009a,data/processed/ami_test/IS1009a.wav,data/rttm/ami_butspeechfit/ami_test/IS1009a.rttm,805.72,4,195,0.1019,0.1363,3.569
+IS1009b,data/processed/ami_test/IS1009b.wav,data/rttm/ami_butspeechfit/ami_test/IS1009b.rttm,2026.9,4,389,0.0885,0.0217,5.098
+IS1009c,data/processed/ami_test/IS1009c.wav,data/rttm/ami_butspeechfit/ami_test/IS1009c.rttm,1789.19,4,291,0.0419,0.1144,5.445
+IS1009d,data/processed/ami_test/IS1009d.wav,data/rttm/ami_butspeechfit/ami_test/IS1009d.rttm,1925.75,4,507,0.0842,0.0972,3.429
+TS3003a,data/processed/ami_test/TS3003a.wav,data/rttm/ami_butspeechfit/ami_test/TS3003a.rttm,1476.39,4,242,0.0303,0.3051,4.24
+TS3003b,data/processed/ami_test/TS3003b.wav,data/rttm/ami_butspeechfit/ami_test/TS3003b.rttm,2149.36,4,404,0.0346,0.153,4.506
+TS3003c,data/processed/ami_test/TS3003c.wav,data/rttm/ami_butspeechfit/ami_test/TS3003c.rttm,2280.36,4,385,0.0394,0.1693,4.92
+TS3003d,data/processed/ami_test/TS3003d.wav,data/rttm/ami_butspeechfit/ami_test/TS3003d.rttm,2591.56,4,698,0.0767,0.2011,2.966

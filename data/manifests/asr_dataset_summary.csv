@@ -1,0 +1,3 @@
+Dataset,Language,# Clips,Total hours,Duration mean,Duration min,Duration max,Clips < 1s,Clips > 30s,Words mean
+LibriSpeech test-clean,English,2620,5.4,7.42,1.28,34.95,0,9,20.1
+FLEURS ru_ru test,Russian,775,2.5,11.6,4.5,33.84,0,1,19.3
