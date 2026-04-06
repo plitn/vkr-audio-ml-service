@@ -1,0 +1,5 @@
+model,dataset,n_samples,mean_pesq,mean_stoi,mean_si_snr,delta_pesq,delta_stoi,delta_si_snr,rtf
+Noisy (no enhancement),DNS-2020,150,1.5822,0.9152,9.2295,0.0,0.0,0.0,0.0
+Wiener Filter,DNS-2020,150,1.2924,0.8703,7.2681,-0.2898,-0.0449,-1.9615,0.0041
+noisereduce (lightweight),DNS-2020,150,1.15,0.8519,3.7956,-0.4323,-0.0633,-5.434,0.0086
+DeepFilterNet3,DNS-2020,150,2.5336,0.9493,16.1009,0.9513,0.0341,6.8713,0.0119
