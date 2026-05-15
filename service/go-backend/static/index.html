@@ -1,348 +1,140 @@
-<!DOCTYPE html>
-<html lang="ru">
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Audio ML Service</title>
-<link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Audio ML Service</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
-<nav>
-  <span class="nav-title">Audio ML</span>
-  <a id="nav-auth"   onclick="go('auth')">Войти</a>
-  <a id="nav-jobs"   onclick="go('jobs')"   style="display:none">Мои джобы</a>
-  <a id="nav-create" onclick="go('create')" style="display:none">Новая джоба</a>
-  <div class="nav-right">
-    <span class="nav-email" id="navEmail"></span>
-    <button class="btn-link" id="logoutBtn" onclick="logout()" style="display:none">Выйти</button>
-  </div>
-</nav>
-
-<!-- AUTH -->
-<div class="page active" id="page-auth">
-  <h2 id="authTitle">Вход</h2>
-  <div class="card" style="max-width:400px">
-    <div class="msg" id="authMsg"></div>
-    <div class="field">
-      <label>Email</label>
-      <input type="email" id="authEmail" placeholder="user@example.com">
+  <header class="topbar">
+    <div>
+      <strong>Audio ML Service</strong>
+      <span id="userEmail" class="muted"></span>
     </div>
-    <div class="field">
-      <label>Пароль</label>
-      <input type="password" id="authPassword" placeholder="Минимум 8 символов">
-    </div>
-    <div style="display:flex;gap:12px;align-items:center;margin-top:4px">
-      <button class="btn btn-primary" id="authBtn" onclick="submitAuth()">Войти</button>
-      <button class="btn-link" id="authSwitch" onclick="toggleAuthMode()">Нет аккаунта? Зарегистрироваться</button>
-    </div>
-  </div>
-</div>
+    <nav id="mainNav" class="nav hidden">
+      <button id="recordNavBtn" class="link-button active">Recorder</button>
+      <button id="historyNavBtn" class="link-button">Recordings</button>
+      <button id="logoutBtn" class="link-button">Logout</button>
+    </nav>
+  </header>
 
-<!-- JOBS -->
-<div class="page" id="page-jobs">
-  <div class="toolbar">
-    <h2 style="margin:0">Мои джобы</h2>
-    <button class="btn btn-primary" onclick="loadJobs()">Обновить</button>
-  </div>
-  <div class="card" style="padding:0;overflow:hidden">
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Статус</th>
-          <th>Задачи</th>
-          <th>Язык</th>
-          <th>Создана</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="jobsBody">
-        <tr><td colspan="6" class="empty">Нажмите "Обновить" чтобы загрузить джобы</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+  <main class="layout">
+    <section id="authView" class="panel">
+      <h1>Sign in</h1>
+      <p class="muted">Use an account to create and process recording sessions.</p>
 
-<!-- CREATE -->
-<div class="page" id="page-create">
-  <h2>Новая джоба</h2>
-  <div class="card" style="max-width:520px">
-    <div class="msg" id="createMsg"></div>
+      <div id="authMessage" class="message hidden"></div>
 
-    <div class="field">
-      <label>Аудио файл (.wav, .mp3, .ogg, .flac, .m4a)</label>
-      <input type="file" id="audioFile" accept=".wav,.mp3,.ogg,.flac,.m4a">
-    </div>
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="email" placeholder="user@example.com">
 
-    <div class="field">
-      <label>Задачи</label>
-      <div class="checks">
-        <label class="check-label"><input type="checkbox" id="taskNr"   checked> Noise reduction</label>
-        <label class="check-label"><input type="checkbox" id="taskAsr"  checked> ASR</label>
-        <label class="check-label"><input type="checkbox" id="taskDiar">         Diarization</label>
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="At least 8 characters">
+
+      <div class="actions">
+        <button id="loginBtn" class="primary">Login</button>
+        <button id="registerBtn">Register</button>
       </div>
-    </div>
+    </section>
 
-    <div class="field">
-      <label>Язык</label>
-      <select id="language">
-        <option value="auto">Авто</option>
-        <option value="ru">Русский</option>
-        <option value="en">English</option>
-      </select>
-    </div>
+    <section id="recorderView" class="panel hidden">
+      <div class="section-head">
+        <div>
+          <h1>Meeting Recorder</h1>
+          <p class="muted">Record a meeting in 30-second chunks and receive the final result after processing.</p>
+        </div>
+        <span id="sessionStatus" class="status">idle</span>
+      </div>
 
-    <button class="btn btn-primary" id="createBtn" onclick="createJob()">Отправить</button>
+      <div id="recordMessage" class="message hidden"></div>
 
-    <div class="result-block" id="createResult">
-      <div class="result-label" id="createResultLabel"></div>
-      <div class="result-text"  id="createResultText"></div>
-    </div>
-  </div>
-</div>
+      <div class="grid">
+        <div>
+          <label>Tasks</label>
+          <label class="check"><input id="taskNr" type="checkbox" checked> Noise reduction</label>
+          <label class="check"><input id="taskAsr" type="checkbox" checked> ASR</label>
+          <label class="check"><input id="taskDiar" type="checkbox" checked> Diarization</label>
+        </div>
 
-<script>
-let token     = localStorage.getItem('token')     || '';
-let userID    = localStorage.getItem('userID')    || '';
-let userEmail = localStorage.getItem('userEmail') || '';
-let isLogin   = true;
-let pollTimer = null;
+        <div>
+          <label for="language">Language</label>
+          <select id="language">
+            <option value="auto">Auto</option>
+            <option value="en">English</option>
+            <option value="ru">Russian</option>
+          </select>
 
-window.onload = function() {
-  if (token) {
-    showLoggedIn();
-    go('jobs');
-    // не грузим автоматически -- ждём кнопку Обновить
-  }
-};
+          <label for="diarizationMode">Diarization mode</label>
+          <select id="diarizationMode">
+            <option value="full" selected>Full recording</option>
+            <option value="chunk">Per chunk</option>
+          </select>
+        </div>
+      </div>
 
-// ---- navigation ----
-function go(page) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
-  const navEl = document.getElementById('nav-' + page);
-  if (navEl) navEl.classList.add('active');
-}
+      <div class="record-line">
+        <button id="startBtn" class="primary">Start recording</button>
+        <button id="stopBtn" class="danger" disabled>Stop</button>
+        <span id="recordTimer" class="timer">00:00</span>
+      </div>
 
-function showLoggedIn() {
-  document.getElementById('nav-auth').style.display   = 'none';
-  document.getElementById('nav-jobs').style.display   = '';
-  document.getElementById('nav-create').style.display = '';
-  document.getElementById('logoutBtn').style.display  = '';
-  document.getElementById('navEmail').textContent     = userEmail;
-}
+      <dl class="facts">
+        <div><dt>Session</dt><dd id="sessionId">-</dd></div>
+        <div><dt>Chunks uploaded</dt><dd id="chunkCount">0</dd></div>
+        <div><dt>Chunk duration</dt><dd>30 sec</dd></div>
+      </dl>
+    </section>
 
-function logout() {
-  token = ''; userID = ''; userEmail = '';
-  localStorage.clear();
-  clearInterval(pollTimer);
-  document.getElementById('nav-auth').style.display   = '';
-  document.getElementById('nav-jobs').style.display   = 'none';
-  document.getElementById('nav-create').style.display = 'none';
-  document.getElementById('logoutBtn').style.display  = 'none';
-  document.getElementById('navEmail').textContent     = '';
-  go('auth');
-}
+    <section id="historyView" class="panel hidden">
+      <div class="section-head">
+        <div>
+          <h1>Recordings</h1>
+          <p class="muted">Previous sessions and their final ASR and diarization results.</p>
+        </div>
+        <button id="refreshHistoryBtn">Refresh</button>
+      </div>
 
-// ---- auth ----
-function toggleAuthMode() {
-  isLogin = !isLogin;
-  document.getElementById('authTitle').textContent  = isLogin ? 'Вход' : 'Регистрация';
-  document.getElementById('authBtn').textContent    = isLogin ? 'Войти' : 'Зарегистрироваться';
-  document.getElementById('authSwitch').textContent = isLogin
-    ? 'Нет аккаунта? Зарегистрироваться'
-    : 'Уже есть аккаунт? Войти';
-  showMsg('authMsg', '', '');
-}
+      <div id="historyMessage" class="message hidden"></div>
+      <div id="sessionList" class="session-list"></div>
+    </section>
 
-async function submitAuth() {
-  const email    = document.getElementById('authEmail').value.trim();
-  const password = document.getElementById('authPassword').value;
-  if (!email || !password) { showMsg('authMsg', 'Заполните все поля', 'err'); return; }
+    <section id="resultView" class="panel hidden">
+      <div class="section-head">
+        <div>
+          <h1>Result</h1>
+          <p class="muted">Final transcript is shown after backend finalization.</p>
+        </div>
+        <div class="actions compact">
+          <a id="downloadFullAudioBtn" class="button-link hidden" href="#">Download audio</a>
+          <button id="downloadTextBtn" class="hidden">Download text</button>
+          <button id="newSessionBtn">New session</button>
+        </div>
+      </div>
 
-  const btn = document.getElementById('authBtn');
-  btn.disabled = true;
+      <div id="processingBlock" class="processing hidden">
+        <div class="spinner"></div>
+        <span>Processing final result...</span>
+      </div>
 
-  const url = isLogin ? '/api/v1/auth/login' : '/api/v1/auth/register';
-  const res = await fetch(url, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ email, password })
-  });
-  const data = await res.json();
-  btn.disabled = false;
+      <div id="resultBlock" class="hidden">
+        <h2>Transcript</h2>
+        <pre id="transcript"></pre>
 
-  if (!res.ok) { showMsg('authMsg', data.error || 'Ошибка', 'err'); return; }
+        <div id="speakerLabelsBlock" class="hidden">
+          <h2>Speaker names</h2>
+          <div id="speakerLabels" class="speaker-labels"></div>
+          <div class="actions compact">
+            <button id="saveSpeakerLabelsBtn">Save speaker names</button>
+          </div>
+        </div>
 
-  if (isLogin) {
-    token     = data.token;
-    userID    = data.user.id;
-    userEmail = data.user.email;
-    localStorage.setItem('token',     token);
-    localStorage.setItem('userID',    userID);
-    localStorage.setItem('userEmail', userEmail);
-    showLoggedIn();
-    go('jobs');
-  } else {
-    showMsg('authMsg', 'Аккаунт создан. Войдите.', 'ok');
-    isLogin = true;
-    toggleAuthMode();
-  }
-}
+        <h2>Segments</h2>
+        <div id="segments"></div>
+      </div>
+    </section>
+  </main>
 
-// ---- jobs ----
-async function loadJobs() {
-  if (!token || !userID) return;
-
-  const tbody = document.getElementById('jobsBody');
-  tbody.innerHTML = '<tr><td colspan="6" class="empty">Загрузка...</td></tr>';
-
-  const res = await fetch('/api/v1/users/' + userID + '/jobs', {
-    headers: { 'Authorization': 'Bearer ' + token }
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    console.error('loadJobs failed:', res.status, err);
-    tbody.innerHTML = `<tr><td colspan="6" class="empty">Ошибка: ${err.error || res.status}</td></tr>`;
-    return;
-  }
-
-  const jobs = await res.json();
-  if (!jobs || jobs.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty">Джоб пока нет</td></tr>';
-    return;
-  }
-
-  tbody.innerHTML = jobs.map(j => `
-    <tr id="row-${j.id}">
-      <td class="id-cell" title="${j.id}">${j.id.slice(0, 8)}...</td>
-      <td><span class="badge badge-${j.status}">${j.status}</span></td>
-      <td>${taskStr(j)}</td>
-      <td>${j.language}</td>
-      <td>${fmtDate(j.created_at)}</td>
-      <td>
-        <button class="btn btn-danger" onclick="deleteJob('${j.id}')">Удалить</button>
-      </td>
-    </tr>
-  `).join('');
-}
-
-function taskStr(j) {
-  return [j.nr && 'NR', j.asr && 'ASR', j.diar && 'DIAR']
-    .filter(Boolean).join(', ') || '-';
-}
-
-async function deleteJob(id) {
-  const res = await fetch('/api/v1/jobs/' + id, {
-    method:  'DELETE',
-    headers: { 'Authorization': 'Bearer ' + token }
-  });
-
-  if (res.ok || res.status === 204) {
-    document.getElementById('row-' + id)?.remove();
-    if (!document.querySelector('#jobsBody tr[id]')) {
-      document.getElementById('jobsBody').innerHTML =
-        '<tr><td colspan="6" class="empty">Джоб пока нет</td></tr>';
-    }
-  } else {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    console.error('deleteJob failed:', res.status, err);
-  }
-}
-
-// ---- create job ----
-async function createJob() {
-  const file = document.getElementById('audioFile').files[0];
-  if (!file) { showMsg('createMsg', 'Выберите файл', 'err'); return; }
-
-  const nr   = document.getElementById('taskNr').checked;
-  const asr  = document.getElementById('taskAsr').checked;
-  const diar = document.getElementById('taskDiar').checked;
-  if (!nr && !asr && !diar) {
-    showMsg('createMsg', 'Включите хотя бы одну задачу', 'err');
-    return;
-  }
-
-  const btn = document.getElementById('createBtn');
-  btn.disabled = true;
-  btn.textContent = 'Отправка...';
-  showMsg('createMsg', '', '');
-
-  const fd = new FormData();
-  fd.append('audio', file);
-  fd.append('config', JSON.stringify({
-    tasks:    { nr, asr, diar },
-    language: document.getElementById('language').value
-  }));
-
-  const res = await fetch('/api/v1/jobs', {
-    method:  'POST',
-    headers: { 'Authorization': 'Bearer ' + token },
-    body:    fd
-  });
-  const job = await res.json();
-
-  btn.disabled = false;
-  btn.textContent = 'Отправить';
-
-  if (!res.ok) {
-    showMsg('createMsg', job.error || 'Ошибка', 'err');
-    return;
-  }
-
-  showMsg('createMsg', 'Создана: ' + job.id, 'ok');
-  startPoll(job.id);
-}
-
-function startPoll(id) {
-  clearInterval(pollTimer);
-
-  const block = document.getElementById('createResult');
-  const label = document.getElementById('createResultLabel');
-  const text  = document.getElementById('createResultText');
-
-  block.classList.add('visible');
-  label.textContent = 'status: pending';
-  text.textContent  = '';
-
-  pollTimer = setInterval(async () => {
-    const res = await fetch('/api/v1/jobs/' + id, {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    const job = await res.json();
-    label.textContent = 'status: ' + job.status;
-
-    if (job.status === 'done') {
-      clearInterval(pollTimer);
-      const r = job.result
-        ? (typeof job.result === 'string' ? JSON.parse(job.result) : job.result)
-        : null;
-      text.textContent = r?.transcript || 'Готово (нет транскрипции)';
-    }
-
-    if (job.status === 'failed') {
-      clearInterval(pollTimer);
-      text.textContent = job.error || 'Pipeline упал';
-    }
-  }, 2000);
-}
-
-// ---- helpers ----
-function showMsg(id, text, type) {
-  const el = document.getElementById(id);
-  el.textContent = text;
-  el.className   = 'msg' + (text ? ' visible msg-' + type : '');
-}
-
-function fmtDate(iso) {
-  if (!iso) return '-';
-  const d = new Date(iso);
-  return d.toLocaleDateString('ru') + ' ' +
-    d.toLocaleTimeString('ru', { hour: '2-digit', minute: '2-digit' });
-}
-</script>
+  <script src="app.js"></script>
 </body>
 </html>

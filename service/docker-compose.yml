@@ -7,7 +7,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: audioservice
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./go-backend/migrations:/docker-entrypoint-initdb.d
@@ -59,18 +59,18 @@ services:
       minio:
         condition: service_healthy
 
-#  worker:
-#    build:
-#      context: ./worker
-#      dockerfile: Dockerfile
-#    env_file: .env
-#    depends_on:
-#      postgres:
-#        condition: service_healthy
-#      redis:
-#        condition: service_healthy
-#      minio:
-#        condition: service_healthy
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
 
 volumes:
   postgres_data:

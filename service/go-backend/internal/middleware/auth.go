@@ -1,4 +1,3 @@
-// internal/middleware/auth.go
 package middleware
 
 import (
@@ -15,7 +14,6 @@ const UserIDKey contextKey = "user_id"
 func Auth(authService *auth.AuthService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// читаем заголовок: Authorization: Bearer <token>
 			header := r.Header.Get("Authorization")
 			if !strings.HasPrefix(header, "Bearer ") {
 				http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)

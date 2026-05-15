@@ -1,0 +1,12 @@
+numpy==1.26.4
+onnx==1.16.2
+protobuf==3.20.3
+torch==2.8.0
+torchaudio==2.8.0
+transformers==4.48.3
+hydra-core==1.3.2
+omegaconf==2.3.0
+lightning==2.4.0
+numba==0.61.0
+librosa==0.11.0
+soundfile==0.12.1

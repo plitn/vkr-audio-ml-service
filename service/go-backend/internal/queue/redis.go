@@ -9,7 +9,11 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-const jobQueueKey = "jobs:queue"
+const (
+	jobQueueKey             = "jobs:queue"
+	chunkQueueKey           = "chunks:queue"
+	sessionFinalizeQueueKey = "sessions:finalize:queue"
+)
 
 type RedisQueue struct {
 	client *redis.Client
@@ -30,4 +34,20 @@ func (q *RedisQueue) Enqueue(ctx context.Context, msg model.JobMsgRedis) error {
 	}
 
 	return nil
+}
+
+func (q *RedisQueue) EnqueueChunk(ctx context.Context, msg model.ChunkMsgRedis) error {
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("marshal chunk message: %w", err)
+	}
+	return q.client.LPush(ctx, chunkQueueKey, data).Err()
+}
+
+func (q *RedisQueue) EnqueueSessionFinalize(ctx context.Context, msg model.SessionFinalizeMsgRedis) error {
+	data, err := json.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("marshal session finalize message: %w", err)
+	}
+	return q.client.LPush(ctx, sessionFinalizeQueueKey, data).Err()
 }

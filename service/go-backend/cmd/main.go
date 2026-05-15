@@ -11,6 +11,7 @@ import (
 	"go-backend/internal/service/auth"
 	"go-backend/internal/service/handler"
 	"go-backend/internal/service/jobs"
+	service "go-backend/internal/service/sessions"
 	"go-backend/internal/storage"
 	"log"
 	"net/http"
@@ -73,6 +74,9 @@ func main() {
 	authService := auth.NewAuthService(repo, jwtSecret)
 	authHandler := handler.NewAuthHandler(authService, repo)
 
+	sessionService := service.NewSessionService(repo, redisQue, storageMinio)
+	sessionHandler := handler.NewSessionHandler(sessionService)
+
 	authMiddleware := middleware.Auth(authService)
 
 	mux := chi.NewRouter()
@@ -92,6 +96,14 @@ func main() {
 		r.Get("/api/v1/users/{user_id}/jobs", jobHandler.GetUserJobs)
 		r.Patch("/api/v1/jobs/{id}/status", jobHandler.SetJobStatus)
 		r.Delete("/api/v1/jobs/{id}", jobHandler.DeleteJob)
+
+		r.Post("/api/v1/sessions", sessionHandler.CreateSession)
+		r.Get("/api/v1/sessions", sessionHandler.ListSessions)
+		r.Post("/api/v1/sessions/{id}/chunks", sessionHandler.AddChunk)
+		r.Get("/api/v1/sessions/{id}/result", sessionHandler.GetResult)
+		r.Patch("/api/v1/sessions/{id}/speaker-labels", sessionHandler.UpdateSpeakerLabels)
+		r.Get("/api/v1/sessions/{id}/download", sessionHandler.DownloadSessionArtifact)
+		r.Get("/api/v1/sessions/{id}/stream", sessionHandler.StreamResults)
 	})
 
 	httpServer := http.Server{

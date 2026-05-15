@@ -1,11 +1,12 @@
 import io
-import numpy as np
-import soundfile as sf
+from pathlib import Path
+
 from minio import Minio
+
 import config
-import librosa
 
 _client = None
+
 
 def get_client():
     global _client
@@ -19,20 +20,35 @@ def get_client():
     return _client
 
 
-def download_audio(audio_key: str) -> tuple[np.ndarray, int]:
-    response = get_client().get_object(config.MINIO_BUCKET, audio_key)
+def download_bytes(object_key: str) -> bytes:
+    response = get_client().get_object(config.MINIO_BUCKET, object_key)
     try:
-        data = response.read()
+        return response.read()
     finally:
         response.close()
         response.release_conn()
 
-    audio, sr = sf.read(io.BytesIO(data), dtype="float32", always_2d=False)
-    if audio.ndim == 2:
-        audio = audio.mean(axis=1)
 
-    if sr != config.TARGET_SR:
-        audio = librosa.resample(audio, orig_sr=sr, target_sr=config.TARGET_SR)
-        sr = config.TARGET_SR
+def download_to_path(object_key: str, path: Path):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    data = download_bytes(object_key)
+    path.write_bytes(data)
 
-    return audio, sr
+
+def upload_bytes(object_key: str, data: bytes, content_type: str = "application/octet-stream"):
+    get_client().put_object(
+        config.MINIO_BUCKET,
+        object_key,
+        io.BytesIO(data),
+        length=len(data),
+        content_type=content_type,
+    )
+
+
+def upload_file(object_key: str, path: Path, content_type: str = "application/octet-stream"):
+    get_client().fput_object(
+        config.MINIO_BUCKET,
+        object_key,
+        str(path),
+        content_type=content_type,
+    )
