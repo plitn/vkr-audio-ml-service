@@ -8,17 +8,8 @@ import (
 )
 
 type Repository interface {
-	JobRepository
 	UserRepository
 	SessionRepository
-}
-
-type JobRepository interface {
-	CreateJob(ctx context.Context, job model.Job) error
-	GetByID(ctx context.Context, id uuid.UUID) (model.Job, error)
-	DeleteJob(ctx context.Context, id uuid.UUID) error
-	SetJobStatus(ctx context.Context, id uuid.UUID, status string) error
-	GetJobsByUserID(ctx context.Context, userID uuid.UUID) ([]model.Job, error)
 }
 
 type UserRepository interface {

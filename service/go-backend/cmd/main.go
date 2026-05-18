@@ -10,7 +10,6 @@ import (
 	"go-backend/internal/repository"
 	"go-backend/internal/service/auth"
 	"go-backend/internal/service/handler"
-	"go-backend/internal/service/jobs"
 	service "go-backend/internal/service/sessions"
 	"go-backend/internal/storage"
 	"log"
@@ -68,9 +67,6 @@ func main() {
 		log.Fatalf("cannot ensure minio bucket: %v", err)
 	}
 
-	jobsService := jobs.NewJobs(repo, *storageMinio, *redisQue)
-	jobHandler := handler.NewJobsHandler(jobsService)
-
 	authService := auth.NewAuthService(repo, jwtSecret)
 	authHandler := handler.NewAuthHandler(authService, repo)
 
@@ -91,11 +87,6 @@ func main() {
 	mux.Group(func(r chi.Router) {
 		r.Use(authMiddleware)
 		r.Get("/api/v1/auth/profile", authHandler.Profile)
-		r.Post("/api/v1/jobs", jobHandler.CreateJob)
-		r.Get("/api/v1/jobs/{id}", jobHandler.GetJob)
-		r.Get("/api/v1/users/{user_id}/jobs", jobHandler.GetUserJobs)
-		r.Patch("/api/v1/jobs/{id}/status", jobHandler.SetJobStatus)
-		r.Delete("/api/v1/jobs/{id}", jobHandler.DeleteJob)
 
 		r.Post("/api/v1/sessions", sessionHandler.CreateSession)
 		r.Get("/api/v1/sessions", sessionHandler.ListSessions)

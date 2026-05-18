@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	jobQueueKey             = "jobs:queue"
 	chunkQueueKey           = "chunks:queue"
 	sessionFinalizeQueueKey = "sessions:finalize:queue"
 )
@@ -21,19 +20,6 @@ type RedisQueue struct {
 
 func NewRedisQueue(client *redis.Client) *RedisQueue {
 	return &RedisQueue{client: client}
-}
-
-func (q *RedisQueue) Enqueue(ctx context.Context, msg model.JobMsgRedis) error {
-	data, err := json.Marshal(msg)
-	if err != nil {
-		return fmt.Errorf("marshal message: %w", err)
-	}
-
-	if err := q.client.LPush(ctx, jobQueueKey, data).Err(); err != nil {
-		return fmt.Errorf("lpush: %w", err)
-	}
-
-	return nil
 }
 
 func (q *RedisQueue) EnqueueChunk(ctx context.Context, msg model.ChunkMsgRedis) error {

@@ -44,14 +44,3 @@ func (r *repository) GetUserByID(ctx context.Context, id uuid.UUID) (model.User,
 	}
 	return user, nil
 }
-
-func (r *repository) GetJobsByUserID(ctx context.Context, userID uuid.UUID) ([]model.Job, error) {
-	var jobsResult []model.Job
-	query := `SELECT id, status, nr, asr, diar, audio_key, language,
-               result, error, created_at, finished_at FROM jobs WHERE user_id = $1 ORDER BY created_at DESC`
-	err := r.db.SelectContext(ctx, &jobsResult, query, userID)
-	if err != nil {
-		return jobsResult, fmt.Errorf("get jobs by user: %w", err)
-	}
-	return jobsResult, nil
-}
