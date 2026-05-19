@@ -11,10 +11,10 @@ import (
 )
 
 func (r *repository) CreateSession(ctx context.Context, s *model.Session) error {
-	query := `INSERT INTO sessions (id, user_id, status, language, nr, asr, diar, diarization_mode, chunk_duration_sec)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`
+	query := `INSERT INTO sessions (id, user_id, status, language, nr, asr, diar, diarization_mode, expected_speakers, chunk_duration_sec)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`
 	_, err := r.db.ExecContext(ctx, query,
-		s.ID, s.UserID, s.Status, s.Language, s.Nr, s.Asr, s.Diar, s.DiarizationMode, s.ChunkDurationSec)
+		s.ID, s.UserID, s.Status, s.Language, s.Nr, s.Asr, s.Diar, s.DiarizationMode, s.ExpectedSpeakers, s.ChunkDurationSec)
 	if err != nil {
 		return fmt.Errorf("create session: %w", err)
 	}
@@ -22,7 +22,7 @@ func (r *repository) CreateSession(ctx context.Context, s *model.Session) error 
 }
 
 func (r *repository) GetSessionByID(ctx context.Context, id uuid.UUID) (*model.Session, error) {
-	query := `SELECT id, user_id, status, language, nr, asr, diar, diarization_mode,
+	query := `SELECT id, user_id, status, language, nr, asr, diar, diarization_mode, expected_speakers,
 			chunk_duration_sec, total_duration_sec, COALESCE(final_result, 'null'::jsonb) AS final_result, error,
 			created_at, recording_started_at, recording_finished_at,
 			processing_started_at, processing_finished_at FROM sessions WHERE id = $1`
@@ -38,7 +38,7 @@ func (r *repository) GetSessionByID(ctx context.Context, id uuid.UUID) (*model.S
 }
 
 func (r *repository) GetSessionsByUserID(ctx context.Context, userID uuid.UUID) ([]*model.Session, error) {
-	query := `SELECT id, user_id, status, language, nr, asr, diar, diarization_mode,
+	query := `SELECT id, user_id, status, language, nr, asr, diar, diarization_mode, expected_speakers,
 			chunk_duration_sec, total_duration_sec, COALESCE(final_result, 'null'::jsonb) AS final_result, error,
 			created_at, recording_started_at, recording_finished_at,
 			processing_started_at, processing_finished_at FROM sessions WHERE user_id = $1 ORDER BY created_at DESC`

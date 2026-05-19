@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	_ "go-backend/docs"
 	"go-backend/internal/config"
 	"go-backend/internal/db"
 	"go-backend/internal/middleware"
@@ -17,8 +18,17 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/redis/go-redis/v9"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
+// @title Audio ML Service API
+// @version 1.0
+// @description Self-hosted browser audio recording service with asynchronous ASR, speaker diarization, and noise reduction processing.
+// @BasePath /
+// @schemes http
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
 func main() {
 	ctx := context.Background()
 	cfg := config.LoadConfig(ctx)
@@ -76,6 +86,7 @@ func main() {
 	authMiddleware := middleware.Auth(authService)
 
 	mux := chi.NewRouter()
+	mux.Get("/swagger/*", httpSwagger.WrapHandler)
 	mux.Handle("/*", http.FileServer(http.Dir("./static")))
 	mux.Get("/health", func(w http.ResponseWriter, r *http.Request) {})
 

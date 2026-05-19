@@ -35,7 +35,7 @@ def get_session(session_id: str) -> dict | None:
         """
         SELECT
             id, user_id, status, language, nr, asr, diar, diarization_mode,
-            chunk_duration_sec, total_duration_sec, final_result, error,
+            expected_speakers, chunk_duration_sec, total_duration_sec, final_result, error,
             created_at, recording_started_at, recording_finished_at,
             processing_started_at, processing_finished_at
         FROM sessions

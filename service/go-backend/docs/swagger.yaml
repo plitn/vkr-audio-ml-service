@@ -1,0 +1,527 @@
+basePath: /
+definitions:
+  model.Chunk:
+    properties:
+      chunk_index:
+        type: integer
+      created_at:
+        type: string
+      duration_sec:
+        type: number
+      enhanced_audio_key:
+        type: string
+      error:
+        type: string
+      id:
+        type: string
+      is_final:
+        type: boolean
+      normalized_audio_key:
+        type: string
+      processing_finished_at:
+        type: string
+      processing_started_at:
+        type: string
+      result:
+        type: object
+      session_id:
+        type: string
+      start_sec:
+        type: number
+      status:
+        type: string
+    type: object
+  model.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  model.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  model.LoginResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/model.User'
+    type: object
+  model.RegisterRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  model.Session:
+    properties:
+      asr:
+        type: boolean
+      chunk_duration_sec:
+        type: integer
+      created_at:
+        type: string
+      diar:
+        type: boolean
+      diarization_mode:
+        type: string
+      error:
+        type: string
+      final_result:
+        type: object
+      id:
+        type: string
+      language:
+        type: string
+      nr:
+        type: boolean
+      processing_finished_at:
+        type: string
+      processing_started_at:
+        type: string
+      recording_finished_at:
+        type: string
+      recording_started_at:
+        type: string
+      status:
+        type: string
+      total_duration_sec:
+        type: number
+      user_id:
+        type: string
+    type: object
+  model.SessionResultResponse:
+    properties:
+      chunks:
+        items:
+          $ref: '#/definitions/model.Chunk'
+        type: array
+      session:
+        $ref: '#/definitions/model.Session'
+    type: object
+  model.SpeakerLabelsRequest:
+    properties:
+      speaker_labels:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  model.SpeakerLabelsResponse:
+    properties:
+      final_result:
+        type: object
+    type: object
+  model.TaskBody:
+    properties:
+      chunk_duration_sec:
+        type: integer
+      diarization_mode:
+        type: string
+      language:
+        type: string
+      tasks:
+        $ref: '#/definitions/model.Tasks'
+    type: object
+  model.Tasks:
+    properties:
+      asr:
+        type: boolean
+      diar:
+        type: boolean
+      nr:
+        type: boolean
+    type: object
+  model.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Self-hosted browser audio recording service with asynchronous ASR,
+    speaker diarization, and noise reduction processing.
+  title: Audio ML Service API
+  version: "1.0"
+paths:
+  /api/v1/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user and returns a JWT token.
+      parameters:
+      - description: Login data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Login
+      tags:
+      - auth
+  /api/v1/auth/profile:
+    get:
+      description: Returns the authenticated user profile.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get current user profile
+      tags:
+      - auth
+  /api/v1/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Creates a new user account.
+      parameters:
+      - description: Registration data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Register a user
+      tags:
+      - auth
+  /api/v1/sessions:
+    get:
+      description: Returns previous recording sessions for the authenticated user.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/model.Session'
+            type: array
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: List recording sessions
+      tags:
+      - sessions
+    post:
+      consumes:
+      - application/json
+      description: Creates a new session with selected ML tasks and diarization mode.
+        Diarization can only be enabled together with ASR.
+      parameters:
+      - description: Session task configuration
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.TaskBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Session'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Create a recording session
+      tags:
+      - sessions
+  /api/v1/sessions/{id}/chunks:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Uploads one audio chunk for a session, stores it, and enqueues
+        asynchronous worker processing.
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Audio chunk file
+        in: formData
+        name: audio
+        required: true
+        type: file
+      - description: Zero-based chunk index
+        in: formData
+        name: chunk_index
+        required: true
+        type: integer
+      - description: Marks the last chunk of the recording
+        in: formData
+        name: is_final
+        required: true
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/model.Chunk'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Upload an audio chunk
+      tags:
+      - sessions
+  /api/v1/sessions/{id}/download:
+    get:
+      description: Downloads the final full audio or a chunk-level raw, normalized,
+        or enhanced audio artifact.
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 'Artifact type: full_audio, raw, normalized, enhanced'
+        in: query
+        name: type
+        type: string
+      - description: Chunk index for chunk-level artifacts
+        in: query
+        name: chunk_index
+        type: integer
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: file
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Download a session artifact
+      tags:
+      - sessions
+  /api/v1/sessions/{id}/result:
+    get:
+      description: Returns the session state and chunks. The final transcript is available
+        when session.status is done.
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SessionResultResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Get session result
+      tags:
+      - sessions
+  /api/v1/sessions/{id}/speaker-labels:
+    patch:
+      consumes:
+      - application/json
+      description: Saves user-provided speaker names and applies them to the final
+        result.
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Speaker label mapping
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model.SpeakerLabelsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SpeakerLabelsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Update speaker labels
+      tags:
+      - sessions
+  /api/v1/sessions/{id}/stream:
+    get:
+      description: Streams chunk and final session events through server-sent events.
+      parameters:
+      - description: Session ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - text/event-stream
+      responses:
+        "200":
+          description: SSE event stream
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Stream session processing events
+      tags:
+      - sessions
+schemes:
+- http
+securityDefinitions:
+  BearerAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

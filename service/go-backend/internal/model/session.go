@@ -32,9 +32,10 @@ type Session struct {
 	Asr                  bool            `db:"asr" json:"asr"`
 	Diar                 bool            `db:"diar" json:"diar"`
 	DiarizationMode      string          `db:"diarization_mode" json:"diarization_mode"`
+	ExpectedSpeakers     *int            `db:"expected_speakers" json:"expected_speakers,omitempty"`
 	ChunkDurationSec     int             `db:"chunk_duration_sec" json:"chunk_duration_sec"`
 	TotalDurationSec     *float64        `db:"total_duration_sec" json:"total_duration_sec,omitempty"`
-	FinalResult          json.RawMessage `db:"final_result" json:"final_result,omitempty"`
+	FinalResult          json.RawMessage `db:"final_result" json:"final_result,omitempty" swaggertype:"object"`
 	Error                *string         `db:"error" json:"error,omitempty"`
 	CreatedAt            time.Time       `db:"created_at" json:"created_at"`
 	RecordingStartedAt   *time.Time      `db:"recording_started_at" json:"recording_started_at,omitempty"`
@@ -54,7 +55,7 @@ type Chunk struct {
 	StartSec             *float64        `db:"start_sec" json:"start_sec,omitempty"`
 	DurationSec          *float64        `db:"duration_sec" json:"duration_sec,omitempty"`
 	IsFinal              bool            `db:"is_final" json:"is_final"`
-	Result               json.RawMessage `db:"result" json:"result,omitempty"`
+	Result               json.RawMessage `db:"result" json:"result,omitempty" swaggertype:"object"`
 	Error                *string         `db:"error" json:"error,omitempty"`
 	CreatedAt            time.Time       `db:"created_at" json:"created_at"`
 	ProcessingStartedAt  *time.Time      `db:"processing_started_at" json:"processing_started_at,omitempty"`
@@ -75,16 +76,17 @@ type SSEEvent struct {
 }
 
 type ChunkMsgRedis struct {
-	ChunkID         string `json:"chunk_id"`
-	SessionID       string `json:"session_id"`
-	AudioKey        string `json:"audio_key"`
-	ChunkIndex      int    `json:"chunk_index"`
-	IsFinal         bool   `json:"is_final"`
-	Nr              bool   `json:"nr"`
-	Asr             bool   `json:"asr"`
-	Diar            bool   `json:"diar"`
-	DiarizationMode string `json:"diarization_mode"`
-	Language        string `json:"language"`
+	ChunkID          string `json:"chunk_id"`
+	SessionID        string `json:"session_id"`
+	AudioKey         string `json:"audio_key"`
+	ChunkIndex       int    `json:"chunk_index"`
+	IsFinal          bool   `json:"is_final"`
+	Nr               bool   `json:"nr"`
+	Asr              bool   `json:"asr"`
+	Diar             bool   `json:"diar"`
+	DiarizationMode  string `json:"diarization_mode"`
+	ExpectedSpeakers *int   `json:"expected_speakers,omitempty"`
+	Language         string `json:"language"`
 }
 
 type SessionFinalizeMsgRedis struct {

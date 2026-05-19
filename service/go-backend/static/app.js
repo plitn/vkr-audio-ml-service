@@ -43,6 +43,7 @@ const el = {
   taskDiar: document.getElementById("taskDiar"),
   language: document.getElementById("language"),
   diarizationMode: document.getElementById("diarizationMode"),
+  expectedSpeakers: document.getElementById("expectedSpeakers"),
   startBtn: document.getElementById("startBtn"),
   stopBtn: document.getElementById("stopBtn"),
   sessionStatus: document.getElementById("sessionStatus"),
@@ -109,6 +110,24 @@ function showHistory() {
 function setActiveNav(active) {
   el.recordNavBtn.classList.toggle("active", active === "record");
   el.historyNavBtn.classList.toggle("active", active === "history");
+}
+
+function syncTaskControls() {
+  if (!el.taskAsr.checked) {
+    el.taskDiar.checked = false;
+  }
+  el.taskDiar.disabled = !el.taskAsr.checked;
+  const diarizationDisabled = !el.taskAsr.checked || !el.taskDiar.checked;
+  el.diarizationMode.disabled = diarizationDisabled;
+  el.expectedSpeakers.disabled = diarizationDisabled;
+  if (diarizationDisabled) {
+    el.expectedSpeakers.value = "";
+  }
+}
+
+function expectedSpeakersValue() {
+  const value = Number(el.expectedSpeakers.value);
+  return Number.isInteger(value) && value > 0 ? value : null;
 }
 
 async function requestJson(url, options = {}) {
@@ -183,6 +202,9 @@ async function createSession() {
   if (!tasks.nr && !tasks.asr && !tasks.diar) {
     throw new Error("Enable at least one ML task.");
   }
+  if (tasks.diar && !tasks.asr) {
+    throw new Error("Diarization requires ASR.");
+  }
 
   return requestJson("/api/v1/sessions", {
     method: "POST",
@@ -194,6 +216,7 @@ async function createSession() {
       tasks,
       language: el.language.value,
       diarization_mode: el.diarizationMode.value,
+      expected_speakers: expectedSpeakersValue(),
       chunk_duration_sec: 30,
     }),
   });
@@ -493,10 +516,10 @@ function renderFinalResult(result, sessionId = state.session?.id) {
     el.downloadFullAudioBtn.classList.add("hidden");
   }
 
-  const segments = result?.segments || [];
   renderSpeakerLabels(result);
-  el.segments.innerHTML = segments.length
-    ? segments.map(renderSegment).join("")
+  const speakerBlocks = buildSpeakerBlocks(result);
+  el.segments.innerHTML = speakerBlocks.length
+    ? speakerBlocks.map(renderSpeakerBlock).join("")
     : '<p class="muted">No timestamped segments were produced.</p>';
 }
 
@@ -512,25 +535,27 @@ function renderSpeakerLabels(result) {
   el.speakerLabelsBlock.classList.remove("hidden");
   el.speakerLabels.innerHTML = speakers.map((speaker) => `
     <label class="speaker-label-row">
-      <span>${escapeHtml(speaker)}</span>
-      <input type="text" data-speaker="${escapeHtml(speaker)}" value="${escapeHtml(labels[speaker] || "")}" placeholder="${escapeHtml(speaker)}">
+      <span>${escapeHtml(speakerDisplayName(speaker, result))}</span>
+      <input type="text" data-speaker="${escapeHtml(speaker)}" value="${escapeHtml(labels[speaker] || "")}" placeholder="${escapeHtml(speakerDisplayName(speaker, result))}">
     </label>
   `).join("");
 }
 
 function uniqueSpeakers(result) {
   const speakers = new Set();
-  for (const item of result?.segments || []) {
-    if (item.speaker) {
+  for (const item of transcriptSegments(result)) {
+    if (item.speaker && item.speaker !== "UNKNOWN") {
       speakers.add(item.speaker);
     }
   }
-  for (const item of result?.speaker_turns || []) {
-    if (item.speaker) {
-      speakers.add(item.speaker);
+  if (!speakers.size) {
+    for (const item of result?.speaker_turns || []) {
+      if (item.speaker && item.speaker !== "UNKNOWN") {
+        speakers.add(item.speaker);
+      }
     }
   }
-  return Array.from(speakers).sort();
+  return Array.from(speakers);
 }
 
 async function loadHistory() {
@@ -568,7 +593,7 @@ function renderSessionItem(session) {
         <div class="session-title">${escapeHtml(title)}</div>
         <div class="session-meta">
           ${created} · status: ${escapeHtml(session.status)} · duration: ${duration}<br>
-          ASR: ${session.asr ? "on" : "off"} · diarization: ${session.diar ? session.diarization_mode : "off"} · NR: ${session.nr ? "on" : "off"}
+          ASR: ${session.asr ? "on" : "off"} · diarization: ${session.diar ? session.diarization_mode : "off"} · expected speakers: ${session.expected_speakers || "auto"} · NR: ${session.nr ? "on" : "off"}
         </div>
       </div>
       <span class="status">${escapeHtml(session.status)}</span>
@@ -671,43 +696,78 @@ function buildTextResult(result) {
     "",
     result.transcript || "",
     "",
-    "Segments",
+    "Speaker blocks",
     "",
   ];
 
-  for (const segment of result.segments || []) {
-    const speaker = displaySpeaker(segment);
-    lines.push(`[${formatSeconds(segment.start)} - ${formatSeconds(segment.end)}] ${speaker}: ${segment.text || ""}`);
-  }
-
-  if (result.speaker_turns?.length) {
-    lines.push("", "Speaker turns", "");
-    for (const turn of result.speaker_turns) {
-      const speaker = displaySpeaker(turn);
-      lines.push(`[${formatSeconds(turn.start)} - ${formatSeconds(turn.end)}] ${speaker}`);
-    }
+  for (const block of buildSpeakerBlocks(result)) {
+    lines.push(`[${formatSeconds(block.start)} - ${formatSeconds(block.end)}] ${block.speaker}: ${block.text}`);
   }
 
   return `${lines.join("\n")}\n`;
 }
 
-function renderSegment(segment) {
-  const speaker = displaySpeaker(segment);
-  const start = formatSeconds(segment.start);
-  const end = formatSeconds(segment.end);
-  const text = escapeHtml(segment.text || "");
+function buildSpeakerBlocks(result) {
+  const blocks = [];
+  for (const segment of transcriptSegments(result)) {
+    const speakerKey = segment.speaker || "UNKNOWN";
+    const speaker = displaySpeaker(segment, result);
+    const text = String(segment.text || "").trim();
+    if (!text) {
+      continue;
+    }
+
+    const start = Number(segment.start || 0);
+    const end = Number(segment.end || start);
+    const previous = blocks[blocks.length - 1];
+
+    if (previous && previous.speakerKey === speakerKey) {
+      previous.end = Math.max(previous.end, end);
+      previous.text = `${previous.text} ${text}`.trim();
+      continue;
+    }
+
+    blocks.push({
+      speakerKey,
+      speaker,
+      start,
+      end,
+      text,
+    });
+  }
+  return blocks;
+}
+
+function transcriptSegments(result) {
+  return [...(result?.segments || [])]
+    .filter((segment) => String(segment.text || "").trim())
+    .sort((left, right) => Number(left.start || 0) - Number(right.start || 0));
+}
+
+function renderSpeakerBlock(block) {
+  const start = formatSeconds(block.start);
+  const end = formatSeconds(block.end);
+  const text = escapeHtml(block.text);
   return `
     <div class="segment">
-      <div class="segment-meta">${speaker}<br>${start} - ${end}</div>
+      <div class="segment-meta">${escapeHtml(block.speaker)}<br>${start} - ${end}</div>
       <div>${text}</div>
     </div>
   `;
 }
 
-function displaySpeaker(item) {
+function displaySpeaker(item, result = state.currentResult) {
   const speaker = item.speaker || "UNKNOWN";
-  const labels = state.currentResult?.speaker_labels || {};
-  return item.speaker_label || labels[speaker] || speaker;
+  const labels = result?.speaker_labels || {};
+  return item.speaker_label || labels[speaker] || speakerDisplayName(speaker, result);
+}
+
+function speakerDisplayName(speaker, result = state.currentResult) {
+  if (!speaker || speaker === "UNKNOWN") {
+    return "UNKNOWN";
+  }
+  const index = uniqueSpeakers(result).indexOf(speaker);
+  return index >= 0 ? `Speaker ${index + 1}` : speaker;
 }
 
 function formatSeconds(value) {
@@ -792,6 +852,8 @@ el.registerBtn.addEventListener("click", register);
 el.recordNavBtn.addEventListener("click", showRecorder);
 el.historyNavBtn.addEventListener("click", showHistory);
 el.logoutBtn.addEventListener("click", logout);
+el.taskAsr.addEventListener("change", syncTaskControls);
+el.taskDiar.addEventListener("change", syncTaskControls);
 el.startBtn.addEventListener("click", startRecording);
 el.stopBtn.addEventListener("click", stopRecording);
 el.newSessionBtn.addEventListener("click", newSession);
@@ -799,6 +861,7 @@ el.refreshHistoryBtn.addEventListener("click", loadHistory);
 el.downloadFullAudioBtn.addEventListener("click", downloadFullAudio);
 el.downloadTextBtn.addEventListener("click", downloadTextResult);
 el.saveSpeakerLabelsBtn.addEventListener("click", saveSpeakerLabels);
+syncTaskControls();
 
 if (state.token) {
   showAuthenticated();

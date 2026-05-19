@@ -37,6 +37,7 @@ func (s *SessionService) CreateSession(
 	nr, asr, diar bool,
 	language string,
 	diarizationMode string,
+	expectedSpeakers *int,
 	chunkDurationSec int,
 ) (*model.Session, error) {
 	if diarizationMode == "" {
@@ -55,6 +56,7 @@ func (s *SessionService) CreateSession(
 		Diar:             diar,
 		Language:         language,
 		DiarizationMode:  diarizationMode,
+		ExpectedSpeakers: expectedSpeakers,
 		ChunkDurationSec: chunkDurationSec,
 	}
 
@@ -109,16 +111,17 @@ func (s *SessionService) AddChunk(ctx context.Context, sessionID uuid.UUID, chun
 	}
 
 	msg := model.ChunkMsgRedis{
-		ChunkID:         chunk.ID.String(),
-		SessionID:       sessionID.String(),
-		AudioKey:        audioKey,
-		ChunkIndex:      chunkIndex,
-		IsFinal:         isFinal,
-		Nr:              session.Nr,
-		Asr:             session.Asr,
-		Diar:            session.Diar,
-		DiarizationMode: session.DiarizationMode,
-		Language:        session.Language,
+		ChunkID:          chunk.ID.String(),
+		SessionID:        sessionID.String(),
+		AudioKey:         audioKey,
+		ChunkIndex:       chunkIndex,
+		IsFinal:          isFinal,
+		Nr:               session.Nr,
+		Asr:              session.Asr,
+		Diar:             session.Diar,
+		DiarizationMode:  session.DiarizationMode,
+		ExpectedSpeakers: session.ExpectedSpeakers,
+		Language:         session.Language,
 	}
 
 	if err := s.queue.EnqueueChunk(ctx, msg); err != nil {

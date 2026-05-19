@@ -52,6 +52,7 @@ def process_chunk(message: dict, session: dict, chunk: dict) -> dict:
     session_id = str(session["id"])
     chunk_id = str(chunk["id"])
     chunk_index = int(chunk["chunk_index"])
+    expected_speakers = session.get("expected_speakers")
     workdir = _chunk_workdir(session_id, chunk_id)
 
     raw_path = workdir / "raw_audio"
@@ -93,6 +94,7 @@ def process_chunk(message: dict, session: dict, chunk: dict) -> dict:
         "asr_applied": False,
         "diar_applied": False,
         "diarization_mode": session["diarization_mode"],
+        "expected_speakers": expected_speakers,
         "models": {
             "noise_reduction": "DeepFilterNet3" if nr_applied else None,
             "asr": config.PARAKEET_MODEL_NAME if session["asr"] else None,
@@ -111,7 +113,7 @@ def process_chunk(message: dict, session: dict, chunk: dict) -> dict:
     if session["diar"] and session["diarization_mode"] == "chunk":
         log.info("chunk %s: chunk diarization started", chunk_id)
         result["diar_applied"] = True
-        result["speaker_turns"] = diarization.run(processing_path)
+        result["speaker_turns"] = diarization.run(processing_path, expected_speakers)
         log.info("chunk %s: chunk diarization produced %d turns", chunk_id, len(result["speaker_turns"]))
 
     log.info("chunk %s: pipeline finished in %.2fs", chunk_id, time.perf_counter() - chunk_started)
@@ -127,6 +129,7 @@ def process_chunk(message: dict, session: dict, chunk: dict) -> dict:
 def build_final_result(session: dict, chunks: list[dict]) -> tuple[float, dict]:
     started = time.perf_counter()
     session_id = str(session["id"])
+    expected_speakers = session.get("expected_speakers")
     workdir = _session_workdir(session_id)
 
     wav_paths = []
@@ -178,7 +181,7 @@ def build_final_result(session: dict, chunks: list[dict]) -> tuple[float, dict]:
 
     if session["diar"] and session["diarization_mode"] == "full":
         log.info("session %s: full diarization started", session_id)
-        speaker_turns = diarization.run(full_wav_path)
+        speaker_turns = diarization.run(full_wav_path, expected_speakers)
         log.info("session %s: full diarization produced %d turns", session_id, len(speaker_turns))
 
     aligned_segments = _align_segments_with_speakers(global_segments, speaker_turns) if speaker_turns else global_segments
@@ -187,6 +190,7 @@ def build_final_result(session: dict, chunks: list[dict]) -> tuple[float, dict]:
         "session_id": session_id,
         "language": session.get("language", "auto"),
         "diarization_mode": session["diarization_mode"],
+        "expected_speakers": expected_speakers,
         "total_duration_sec": total_duration,
         "audio_key": full_audio_key,
         "transcript": " ".join(transcript_parts).strip(),

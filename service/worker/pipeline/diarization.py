@@ -61,11 +61,14 @@ def _get_pipeline():
     return _pipeline
 
 
-def run(wav_path: Path) -> list[dict]:
+def run(wav_path: Path, expected_speakers: int | None = None) -> list[dict]:
     pipeline = _get_pipeline()
     started = time.perf_counter()
-    log.info("diarization inference started: %s", wav_path)
-    diarization = pipeline(str(wav_path))
+    kwargs = {}
+    if expected_speakers:
+        kwargs["num_speakers"] = int(expected_speakers)
+    log.info("diarization inference started: %s, expected_speakers=%s", wav_path, expected_speakers or "auto")
+    diarization = pipeline(str(wav_path), **kwargs)
     log.info("diarization inference finished in %.2fs", time.perf_counter() - started)
 
     turns = []

@@ -20,14 +20,20 @@ type SessionHandler struct {
 	sessionService *service.SessionService
 }
 
-type speakerLabelsBody struct {
-	SpeakerLabels map[string]string `json:"speaker_labels"`
-}
-
 func NewSessionHandler(s *service.SessionService) *SessionHandler {
 	return &SessionHandler{sessionService: s}
 }
 
+// ListSessions godoc
+// @Summary List recording sessions
+// @Description Returns previous recording sessions for the authenticated user.
+// @Tags sessions
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {array} model.Session
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /api/v1/sessions [get]
 func (h *SessionHandler) ListSessions(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
 	if !ok {
@@ -45,6 +51,19 @@ func (h *SessionHandler) ListSessions(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(sessions)
 }
 
+// CreateSession godoc
+// @Summary Create a recording session
+// @Description Creates a new session with selected ML tasks and diarization mode.
+// @Tags sessions
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param request body model.TaskBody true "Session task configuration"
+// @Success 201 {object} model.Session
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /api/v1/sessions [post]
 func (h *SessionHandler) CreateSession(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
 	if !ok {
@@ -60,6 +79,18 @@ func (h *SessionHandler) CreateSession(w http.ResponseWriter, r *http.Request) {
 
 	if !body.Tasks.Nr && !body.Tasks.Asr && !body.Tasks.Diar {
 		writeError(w, http.StatusBadRequest, "at least one task must be enabled")
+		return
+	}
+	if body.Tasks.Diar && !body.Tasks.Asr {
+		writeError(w, http.StatusBadRequest, "diarization requires ASR")
+		return
+	}
+	if body.ExpectedSpeakers != nil && !body.Tasks.Diar {
+		writeError(w, http.StatusBadRequest, "expected_speakers requires diarization")
+		return
+	}
+	if body.ExpectedSpeakers != nil && (*body.ExpectedSpeakers < 1 || *body.ExpectedSpeakers > 20) {
+		writeError(w, http.StatusBadRequest, "expected_speakers must be between 1 and 20")
 		return
 	}
 
@@ -81,6 +112,7 @@ func (h *SessionHandler) CreateSession(w http.ResponseWriter, r *http.Request) {
 		body.Tasks.Nr, body.Tasks.Asr, body.Tasks.Diar,
 		language,
 		diarizationMode,
+		body.ExpectedSpeakers,
 		body.ChunkDurationSec,
 	)
 	if err != nil {
@@ -93,6 +125,24 @@ func (h *SessionHandler) CreateSession(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(session)
 }
 
+// AddChunk godoc
+// @Summary Upload an audio chunk
+// @Description Uploads one audio chunk for a session, stores it, and enqueues async worker processing.
+// @Tags sessions
+// @Accept multipart/form-data
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Session ID"
+// @Param audio formData file true "Audio chunk file"
+// @Param chunk_index formData int true "Zero-based chunk index"
+// @Param is_final formData bool true "Marks the last chunk of the recording"
+// @Success 202 {object} model.Chunk
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 409 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /api/v1/sessions/{id}/chunks [post]
 func (h *SessionHandler) AddChunk(w http.ResponseWriter, r *http.Request) {
 	rawID := chi.URLParam(r, "id")
 	sessionID, err := uuid.Parse(rawID)
@@ -142,6 +192,19 @@ func (h *SessionHandler) AddChunk(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(chunk)
 }
 
+// GetResult godoc
+// @Summary Get session result
+// @Description Returns the session state and chunks. The final transcript is available when session.status is done.
+// @Tags sessions
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Session ID"
+// @Success 200 {object} model.SessionResultResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /api/v1/sessions/{id}/result [get]
 func (h *SessionHandler) GetResult(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
 	if !ok {
@@ -179,6 +242,21 @@ func (h *SessionHandler) GetResult(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// UpdateSpeakerLabels godoc
+// @Summary Update speaker labels
+// @Description Saves user-provided speaker names and applies them to the final result.
+// @Tags sessions
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "Session ID"
+// @Param request body model.SpeakerLabelsRequest true "Speaker label mapping"
+// @Success 200 {object} model.SpeakerLabelsResponse
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Failure 409 {object} model.ErrorResponse
+// @Router /api/v1/sessions/{id}/speaker-labels [patch]
 func (h *SessionHandler) UpdateSpeakerLabels(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
 	if !ok {
@@ -193,7 +271,7 @@ func (h *SessionHandler) UpdateSpeakerLabels(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	var body speakerLabelsBody
+	var body model.SpeakerLabelsRequest
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid request body")
 		return
@@ -224,6 +302,20 @@ func (h *SessionHandler) UpdateSpeakerLabels(w http.ResponseWriter, r *http.Requ
 	})
 }
 
+// DownloadSessionArtifact godoc
+// @Summary Download a session artifact
+// @Description Downloads the final full audio or a chunk-level raw, normalized, or enhanced audio artifact.
+// @Tags sessions
+// @Produce octet-stream
+// @Security BearerAuth
+// @Param id path string true "Session ID"
+// @Param type query string false "Artifact type: full_audio, raw, normalized, enhanced"
+// @Param chunk_index query int false "Chunk index for chunk-level artifacts"
+// @Success 200 {file} binary
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 404 {object} model.ErrorResponse
+// @Router /api/v1/sessions/{id}/download [get]
 func (h *SessionHandler) DownloadSessionArtifact(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserIDKey).(uuid.UUID)
 	if !ok {
@@ -284,6 +376,18 @@ func (h *SessionHandler) DownloadSessionArtifact(w http.ResponseWriter, r *http.
 	}
 }
 
+// StreamResults godoc
+// @Summary Stream session processing events
+// @Description Streams chunk and final session events through server-sent events.
+// @Tags sessions
+// @Produce text/event-stream
+// @Security BearerAuth
+// @Param id path string true "Session ID"
+// @Success 200 {string} string "SSE event stream"
+// @Failure 400 {object} model.ErrorResponse
+// @Failure 401 {object} model.ErrorResponse
+// @Failure 500 {object} model.ErrorResponse
+// @Router /api/v1/sessions/{id}/stream [get]
 func (h *SessionHandler) StreamResults(w http.ResponseWriter, r *http.Request) {
 	rawID := chi.URLParam(r, "id")
 	sessionID, err := uuid.Parse(rawID)
