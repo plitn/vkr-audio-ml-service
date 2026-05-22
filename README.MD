@@ -1,120 +1,83 @@
-# Application of Machine Learning Methods for Audio Transcription, Speaker Diarization, and Noise Reduction
+# Audio ML Service
 
-## General Information
+Self-hosted service for browser-based audio recording and asynchronous batch processing with automatic speech recognition, speaker diarization, and optional noise reduction.
 
-**Student:** Дмитрин Платон Александрович
-**Academic Supervisor:** Ильвовский Дмитрий Алексеевич  
-
-## Project Description
-
-For this master's thesis a web service for audio processing using machine learning methods is planned to be developed.  
-The service is expected to solve the following tasks:
-
-- audio transcription;
-- speaker diarization;
-- audio noise reduction.
-
-This project includes 
-- studying of existing methods and models;
-- selecting suitable quality evaluation metrics;
-- datasets preparation for testing and development;
-- developing backend architecture for our service;
-- ... 
-
-## Goal of the Thesis
-
-To develop a web service that applies machine learning methods for automatic audio transcription, speaker diarization, and noise reduction.
-
-## Main Objectives
-
-1. Conduct a literature review of existing approaches and open-source solutions in the following areas:
-   - automatic speech recognition;
-   - speaker diarization;
-   - audio noise reduction;
-2. Select and describe the data and application scenarios to be used;
-3. Perform collection, preparation, and analysis of audio data;
-4. Select quality evaluation metrics for each subtask;
-5. Implement a baseline solution for audio processing;
-6. Improve quality of the ML part of the work;
-7. Develop backend solution for our service;
-8. Develop a web service that combines the selected models into a unified pipeline;
-9. Perform testing, compare solutions, and refine the system.
-
-## Work Plan
-
-### Checkpoint 1. Project Initialization -- Done.
-- create the repository;
-- prepare the README file;
-- formulate a preliminary work plan;
-- define the problem statement and project scope.
-
-### Checkpoint 2. Literature Review and Research Foundation -- 12 march 2026
-- review open-source solutions, and existing services;
-- analyze modern approaches to transcription, diarization, and noise reduction;
-- make a preliminary selection of models, libraries, and tools;
-- identify base metrics and comparison criteria;
-- select open datasets and test audio recordings;
-- determine language in datasets (Russian or English?)
-
-### Checkpoint 3. Data Preparation and Analysis -- 13 march 2026
-- analyze formats and characteristics of audio data;
-- perform preprocessing, unification, and structuring of the data;
-- conduct EDA;
-- prepare datasets for testing and baseline experiments.
-
-### Checkpoint 4. Baseline Development and Metric Selection -- 14 march 2026
-- choose quality metrics for transcription, diarization, and noise reduction;
-- implement a baseline audio processing pipeline;
-- obtain initial results on test data;
-- analyze the limitations of the baseline approach.
-
-### Checkpoint 5. Improved Solution Development -- 15 march 2026
-- select and integrate more advanced models or configurations;
-- compare them with the baseline;
-- optimize system quality and/or processing speed.
-
-### Checkpoint 6. Web Service Development -- TBA
-- design the service architecture;
-- implement the backend;
-- implement the user interface;
-- integrate the models into a unified audio processing service.
-
-### Checkpoint 7. Testing and Refinement
-- perform functional testing of the service;
-- test the service on different types of audio recordings;
-- analyze the quality of the results;
-- refine the interface and processing logic.
-
-### More Checkpoints will be added later...
-
-### Checkpoint XXX. Thesis Writing and Final Materials Preparation
-- document the research results;
-- describe the architecture, experiments, and conclusions;
-- prepare demonstration materials.
-
-## Preliminary Data Description
-
-The project is expected to use audio recordings containing:
-- speech from one or multiple speakers;
-- recordings with different levels of background noise;
-- audio of varying duration and quality;
-- scenarios close to practical web service use cases.
-
-## Technology Stack
-
-- Python
-- Golang
-- REST API
-- PostreSQL (may change later)
-- Docker
-- Redis (?)
-- ASR models for transcription (edit later)
-- speaker diarization tools (edit later)
-- noise reduction models or libraries (edit later)
-- simple HTTP + JS (?)
-- git for version control
+The service records audio in the browser, uploads it in chunks, processes previous chunks while recording continues, and returns the final transcript and diarization result after the session is finalized.
 
 ## Current Status
 
-The project is currently at the initialization and planning stage.  
-Current stage: **Checkpoint 1 — Project Initialization**.
+The project is developed as part of a master's thesis on the application of machine learning methods for audio transcription, diarization, and noise reduction.
+
+WORK DEMO:
+
+## Prerequisites
+
+- Docker
+- Docker Compose
+- Hugging Face access token if diarization is enabled
+
+## Environment File
+
+Create a secrets file at:
+
+```bash
+service/.env
+```
+
+Example:
+
+```env
+DB_PASSWORD=dbpass
+DB_DSN=postgresql://postgres:dbpass@postgres:5432/audioservice
+REDIS_URL=redis://redis:6379/0
+MINIO_ENDPOINT=minio:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=secretkey
+MINIO_BUCKET=audio
+MINIO_USE_SSL=false
+JWT_SECRET=qwerty
+
+HF_TOKEN=hugging_face_token
+```
+
+Notes:
+
+- `DB_PASSWORD` must match the password used inside `DB_DSN`.
+- `HF_TOKEN` is required for gated Hugging Face models, especially pyannote diarization models.
+- `JWT_SECRET` should be a long random value.
+- `MINIO_ACCESS_KEY` and `MINIO_SECRET_KEY` are used both by MinIO and by the application services.
+
+## Run with Docker Compose
+
+From the repository root:
+
+```bash
+cd service
+docker compose up --build
+```
+
+After startup, the services are available at:
+
+- Web application: `http://localhost:8080`
+- Swagger UI: `http://localhost:8080/swagger/index.html`
+- MinIO console: `http://localhost:9001`
+- PostgreSQL: `localhost:5433`
+- Redis: `localhost:6379`
+
+## Local Workflow
+
+1. Create `service/.env`;
+2. Run `docker compose up --build` from the `service` directory;
+3. Open `http://localhost:8080`;
+4. Register a user or log in;
+5. Start a recording session;
+6. Stop recording and wait for backend finalization;
+7. Open the result page to view the transcript, speaker blocks, and downloads.
+
+## Project Plan
+
+The previous README with the research and implementation plan was moved to:
+
+```text
+WORK_PLAN.md
+```
