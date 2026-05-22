@@ -8,7 +8,7 @@ The service records audio in the browser, uploads it in chunks, processes previo
 
 The project is developed as part of a master's thesis on the application of machine learning methods for audio transcription, diarization, and noise reduction.
 
-WORK DEMO:
+WORK DEMO: https://disk.360.yandex.ru/i/OQh1zUAOnYo1Rg
 
 ## Prerequisites
 
